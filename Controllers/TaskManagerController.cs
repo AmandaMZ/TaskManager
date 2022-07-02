@@ -9,6 +9,8 @@ namespace Task.Controllers
 {
     public class TaskManagerController : Controller
     {
+        private string nomeProcesso = "";
+
         public IActionResult Index()
         {                     
             ViewBag.Processos = GetProcesso();
@@ -26,37 +28,31 @@ namespace Task.Controllers
             foreach (Process process in processList)
             {
                 // childProcess = GetChildProcesses(process.Id);
-                                
-                Processo processo = new Processo();
-                processo.Id     = process.Id;
-                processo.Nome   = process.ProcessName;
-                processo.Status = process.Responding == true ? "Em execução" : "Suspenso";
 
+                Processo processo = new Processo();
+                processo.Id               = process.Id;
+                processo.Nome             = process.ProcessName;
+                processo.Status           = process.Responding == true ? "Em execução" : "Suspenso";
+                processo.MemoriaFormatada = GetMemoriaFormatada(process.PrivateMemorySize64);
+                processo.SubProcessos     = childProcess;
+                
                 dynamic extraProcessInfo = GetProcessExtraInformation(process.Id);
                 processo.Usuario   = extraProcessInfo.Username;
                 processo.Descricao = extraProcessInfo.Description;
-
-                processo.MemoriaFormatada = GetMemoriaFormatada(process.PrivateMemorySize64);
                 
-                processo.SubProcessos     = childProcess;
+                try
+                {                 
+                    string[] processoDetalhes = new string[] { process.StartTime.ToShortTimeString(), process.TotalProcessorTime.Duration().Hours.ToString() + ":" + process.TotalProcessorTime.Duration().Minutes.ToString() + ":" + process.TotalProcessorTime.Duration().Seconds.ToString(), (process.WorkingSet64 / 1024).ToString() + "k", (process.PeakWorkingSet64 / 1024).ToString() + "k", process.HandleCount.ToString(), process.Threads.Count.ToString(), process.TotalProcessorTime.Duration().Milliseconds.ToString() };
 
-                //PerformanceCounter performanceCounter = new PerformanceCounter("Process", "ID Process", process.ProcessName, true);
-                //processo.CPU = performanceCounter.NextValue() + "%";
+                    processo.TempoInicialProcesso  = processoDetalhes[0];
+                    processo.TempoTotalProcessador = processoDetalhes[1];
 
-                //if (process.Id != 0)
-                //{
-                //    TimeSpan t = process.TotalProcessorTime;
-                //    processo.TempoTotalProcessador = t.ToString().Substring(0,8);
-                //    long l = 0;
-                //}
-
-                //PerformanceCounter total_cpu   = new PerformanceCounter("Process", "% Processor Time", "_Total");
-                //PerformanceCounter process_cpu = new PerformanceCounter("Process", "% Processor Time", process.ProcessName);
-                
-                //if (process_cpu.NextValue() && total_cpu.NextValue())
-                //    String s = (process_cpu.NextValue() / total_cpu.NextValue() * 100) + "%";
-                
-                //processo.CPU = GetCpuUsage(process.ProcessName);
+                    if (process.Id != 0)
+                    {
+                        processo.UtilizacaoTotalCpu = UpdateCpuUsagePercent(Convert.ToDouble(processoDetalhes[6]), process.ProcessName);
+                    }
+                }
+                catch { }
 
                 processos.Add(processo);            
             }
@@ -64,15 +60,7 @@ namespace Task.Controllers
             return processos;
         }
 
-        //public int GetCpuUsage(string nome)
-        //{
-        //    PerformanceCounter cpuCounter;
-        //    cpuCounter = new PerformanceCounter("Process", "% Processor Time", nome);
-        //    var a = cpuCounter.NextValue();
-        //
-        //    return (int)cpuCounter.NextValue();
-        //}
-
+       
         public string GetMemoriaFormatada(Int64 bytes)
         {
             List<String> listSufixos = new List<String> { "Bytes", "KB", "MB", "GB", "TB", "PB" };
@@ -85,18 +73,18 @@ namespace Task.Controllers
                 counter++;
             }
             return string.Format("{0:n1}{1}", number, listSufixos[counter]);
-        }    
+        }
 
         public ExpandoObject GetProcessExtraInformation(int processId)
         {
             string query = "Select * From Win32_Process Where ProcessID = " + processId;
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
+            ManagementObjectSearcher   searcher    = new ManagementObjectSearcher(query);
             ManagementObjectCollection processList = searcher.Get();
-
+        
             dynamic response = new ExpandoObject();
             response.Description = "";
-            response.Username = "";
-
+            response.Username    = "";
+        
             foreach (ManagementObject obj in processList)
             {
                 string[] argList = new string[] { string.Empty, string.Empty };
@@ -105,7 +93,7 @@ namespace Task.Controllers
                 {
                     response.Username = argList[0];
                 }
-
+        
                 if (obj["ExecutablePath"] != null)
                 {
                     try
@@ -116,9 +104,9 @@ namespace Task.Controllers
                     catch { }
                 }
             }
-
+        
             return response;
-        }
+        }       
 
         public List<Process> GetChildProcesses(int processId)
         {
@@ -136,21 +124,19 @@ namespace Task.Controllers
             return results;
         }
 
-        //public int? GetParentId(Process process)
-        //{
-        //    string queryText = string.Format("select parentprocessid, name from win32_process where processid = {0}", process.Id);
-        //    using (var searcher = new ManagementObjectSearcher(queryText))
-        //    {
-        //        foreach (var obj in searcher.Get())
-        //        {
-        //            object data = obj.Properties["parentprocessid"].Value;
-        //            object name = obj.Properties["name"].Value;
+        private static PerformanceCounter TotalCpuUsage()
+        {
+            return new PerformanceCounter("Process", "% Processor Time", "Idle");
+        }
 
-        //            if (data != null)
-        //                return Convert.ToInt32(data);
-        //        }
-        //    }
-        //    return null;
-        //}
+        private static double UpdateCpuUsagePercent(double totalMilliseconds, string name)
+        {
+            double Total = 0;
+
+            PerformanceCounter totalCpuUsage = new PerformanceCounter("Process", "% Processor Time", name);
+            float utilizacaoTotalCpu = totalCpuUsage.NextValue();
+
+            return totalMilliseconds / (100 - utilizacaoTotalCpu);
+        }
     }
 }

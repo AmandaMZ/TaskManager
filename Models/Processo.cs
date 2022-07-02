@@ -15,5 +15,7 @@ namespace Task.Models
         public List<Process> SubProcessos { get; set; }
         public int CPU { get; set; }
         public string TempoTotalProcessador { get; set; }
+        public string TempoInicialProcesso { get; set; }
+        public double UtilizacaoTotalCpu { get; set; }
     }
 }

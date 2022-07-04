@@ -3,67 +3,102 @@ using System.Dynamic;
 using System.Diagnostics;
 using System.Management;
 using Task.Models;
-
+using System.Collections.Generic;
 
 namespace Task.Controllers
 {
     public class TaskManagerController : Controller
     {
-        private string nomeProcesso = "";
+        Dictionary<int, Processo> dictProcessos = new Dictionary<int, Processo>();
 
         public IActionResult Index()
-        {                     
-            ViewBag.Processos = GetProcesso();
+        {
+            GetProcessoEstatico(dictProcessos);
+            GetProcesso(dictProcessos);
+
+            ViewBag.Processos           = dictProcessos;
+            ViewBag.QuantidadeProcessos = dictProcessos.Count();
 
             return View();
         }
 
-        public List<Processo> GetProcesso()
+        public void GetProcessoEstatico(Dictionary<int, Processo> dictProcessos)
         {            
             Process[] processList = Process.GetProcesses();
 
-            List<Processo> processos    = new List<Processo>();
-            List<Process>  childProcess = new List<Process> ();
-
             foreach (Process process in processList)
             {
-                // childProcess = GetChildProcesses(process.Id);
-
                 Processo processo = new Processo();
-                processo.Id               = process.Id;
-                processo.Nome             = process.ProcessName;
-                processo.Status           = process.Responding == true ? "Em execução" : "Suspenso";
-                processo.MemoriaFormatada = GetMemoriaFormatada(process.PrivateMemorySize64);
-                processo.SubProcessos     = childProcess;
-                
-                dynamic extraProcessInfo = GetProcessExtraInformation(process.Id);
-                processo.Usuario   = extraProcessInfo.Username;
-                processo.Descricao = extraProcessInfo.Description;
-                
+
+                var thread1 = new Thread(() =>
+                {
+                    dynamic extraProcessInfo = GetProcessExtraInformation(process.Id);
+                    processo.Usuario = extraProcessInfo.Username;
+                    processo.Descricao = extraProcessInfo.Description;
+                });
+                thread1.Start();
+
                 try
                 {                 
-                    string[] processoDetalhes = new string[] { process.StartTime.ToShortTimeString(), process.TotalProcessorTime.Duration().Hours.ToString() + ":" + process.TotalProcessorTime.Duration().Minutes.ToString() + ":" + process.TotalProcessorTime.Duration().Seconds.ToString(), (process.WorkingSet64 / 1024).ToString() + "k", (process.PeakWorkingSet64 / 1024).ToString() + "k", process.HandleCount.ToString(), process.Threads.Count.ToString(), process.TotalProcessorTime.Duration().Milliseconds.ToString() };
-
-                    processo.TempoInicialProcesso  = processoDetalhes[0];
-                    processo.TempoTotalProcessador = processoDetalhes[1];
-
-                    if (process.Id != 0)
+                    string[] processoDetalhes = new string[] 
                     {
-                        processo.UtilizacaoTotalCpu = UpdateCpuUsagePercent(Convert.ToDouble(processoDetalhes[6]), process.ProcessName);
-                    }
+                        process.StartTime.ToShortTimeString(), 
+                        process.Threads.Count.ToString(), 
+                        process.TotalProcessorTime.Duration().Milliseconds.ToString(),
+                    };
+        
+                    processo.TempoInicialProcesso = processoDetalhes[0];
+                    processo.Threads              = processoDetalhes[1];
+        
+                    if (process.Id != 0)
+                        processo.UtilizacaoTotalCPU = UpdateCpuUsagePercent(Convert.ToDouble(processoDetalhes[2]), process.ProcessName);
                 }
                 catch { }
 
-                processos.Add(processo);            
-            }
+                processo.Id   = process.Id;
+                processo.Nome = process.ProcessName;
 
-            return processos;
+                thread1.Join();
+
+                dictProcessos[process.Id] = processo;
+            }
         }
 
-       
+        public void GetProcesso(Dictionary<int, Processo> dictProcessos)
+        {
+            Process[] processList = Process.GetProcesses();
+
+            foreach (Process process in processList)
+            {
+                var filter = dictProcessos.FirstOrDefault(p => p.Key == process.Id);
+
+                if (filter.Value == null)
+                {
+                    dictProcessos.Remove(process.Id);
+                    continue;
+                }
+
+                Processo processo = filter.Value;
+
+                try
+                {
+                    string[] processoDetalhes = new string[]
+                    {
+                        process.TotalProcessorTime.Duration().Hours.ToString() + ":" + process.TotalProcessorTime.Duration().Minutes.ToString() + ":" + process.TotalProcessorTime.Duration().Seconds.ToString()
+                    };
+
+                    processo.TempoTotalProcessador = processoDetalhes[0];
+                }
+                catch { }
+
+                processo.Status           = process.Responding == true ? "Em execução" : "Suspenso";
+                processo.MemoriaFormatada = GetMemoriaFormatada(process.PrivateMemorySize64);
+            }
+        }
+
         public string GetMemoriaFormatada(Int64 bytes)
         {
-            List<String> listSufixos = new List<String> { "Bytes", "KB", "MB", "GB", "TB", "PB" };
+            List<String> listSufixos = new List<String> { " sBytes", " KB", " MB", " GB", " TB", " PB" };
 
             int counter = 0;
             decimal number = (decimal)bytes;
@@ -77,14 +112,22 @@ namespace Task.Controllers
 
         public ExpandoObject GetProcessExtraInformation(int processId)
         {
-            string query = "Select * From Win32_Process Where ProcessID = " + processId;
-            ManagementObjectSearcher   searcher    = new ManagementObjectSearcher(query);
-            ManagementObjectCollection processList = searcher.Get();
+            ManagementObjectCollection processList = null;
+
+            var thread3 = new Thread(() =>
+            {
+                string query = "Select * From Win32_Process Where ProcessID = " + processId;
+                ManagementObjectSearcher   searcher    = new ManagementObjectSearcher(query);
+                processList = searcher.Get();
+            });
+            thread3.Start();
         
             dynamic response = new ExpandoObject();
             response.Description = "";
             response.Username    = "";
-        
+
+            thread3.Join();
+
             foreach (ManagementObject obj in processList)
             {
                 string[] argList = new string[] { string.Empty, string.Empty };
@@ -108,31 +151,8 @@ namespace Task.Controllers
             return response;
         }       
 
-        public List<Process> GetChildProcesses(int processId)
-        {
-            var results = new List<Process>();
-
-            string queryText = string.Format("select processid from win32_process where parentprocessid = {0}", processId);
-            using (var searcher = new ManagementObjectSearcher(queryText))
-            {
-                foreach (var obj in searcher.Get())
-                {
-                    results.Add(Process.GetProcessById(Convert.ToInt32(obj.Properties["processid"].Value)));
-                }
-            }
-
-            return results;
-        }
-
-        private static PerformanceCounter TotalCpuUsage()
-        {
-            return new PerformanceCounter("Process", "% Processor Time", "Idle");
-        }
-
         private static double UpdateCpuUsagePercent(double totalMilliseconds, string name)
         {
-            double Total = 0;
-
             PerformanceCounter totalCpuUsage = new PerformanceCounter("Process", "% Processor Time", name);
             float utilizacaoTotalCpu = totalCpuUsage.NextValue();
 

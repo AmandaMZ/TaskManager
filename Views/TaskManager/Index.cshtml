@@ -9,7 +9,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="./images/favicon.png"> <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="https://aux4.iconspalace.com/uploads/874751241347963591.png"> <!-- Favicon -->
     <link rel="stylesheet" href="style.css">
     <title>Task Manager</title>
     <style>
@@ -31,7 +31,7 @@
     align-items: center;
 }
 
-#video-background {
+#image-background {
     position: fixed;
     z-index: 0;
     right: 0;
@@ -125,23 +125,11 @@
     table-layout: fixed;
 }
 
-#percent-usage td {
-    text-align: center;
-    font-size: 18px;
-    padding-top: 5px;
-}
-
-#percent-usage {
-    position: sticky;
-    top: 0;
-    background-color: white;
-}
-
 #first-row-processes th {
     position: sticky;
     text-align: start;
     padding: 10px 15px 5px 0;
-    top: 24px;
+    top: 0;
     background-color: white;
 }
 
@@ -153,7 +141,7 @@
     background-color: white;
 }
 
-#apps, #second-plan {
+#apps {
     padding: 5px 0;
     color: rgb(73, 125, 194);
     font-size: 16px;
@@ -192,17 +180,17 @@ td {
 
 <body onload="openProcesses()">
     <div class="background">
-        <video id="video-background" autoplay muted loop src="./images/background.mp4" type="video/mp4"></video>
+        <img id="image-background" src="https://i.pinimg.com/originals/87/9d/e4/879de4cf2f25847047e2ef7f5c957439.jpg"></img>
 
         <div class="window">
             <!-- Barra superior com botões de minimizar, maximizar e fechar a janela -->
             <div class="top-window">
                 <div class="window-title">
-                    <img src="./images/icon.png" style="height: 12px; width: auto; margin-right: 7px;">
+                    <img src="https://aux.iconspalace.com/uploads/2495345442115675755.png" style="height: 20px; width: auto; margin-right: 7px;">
                     <p style="color: white; font-weight: 400;">Gerenciador de Tarefas</p>
                 </div>
                 <div class="window-buttons">
-                    <p class="button" id="reload-window" style="font-size: 16px; color: white;" onclick="reload()"> ↺ </p>
+                    <p class="button" id="reload-window" style="font-size: 16px; color: rgb(73, 125, 194);" onclick="reload()"> ↺ </p>
                     <p class="button" id="minimize-window" style="font-size: 16px; color: white;">&#8212</p>
                     <p class="button" id="restore-window" style="font-size: 16px; color: white;">&#x25A2</p>
                     <p class="button" id="close-window" style="border-top-right-radius: 9px; color: white;" onclick="closeWindow()">
@@ -220,21 +208,12 @@ td {
             <div class="content" id="processes">
                 <nobr>
                     <table id="table-processes">
-                        <!-- Porcentagem de uso dos processos -->
-                        <tr id="percent-usage">
-                            <td></td>
-                            <td>15%</td>
-                            <td>@ViewBag.TotalMemoria%</td>
-                            <td>0%</td>
-                            <td>8%</td>
-                            <td></td>
-                        </tr>
                         <tr id="first-row-processes">
                             <th>Nome</th>
                             <th>CPU</th>
-                            <th>Memória</th>
+                            <th>Memória Física</th>
+                            <th>Memória Paginada</th>
                             <th>Threads</th>
-                            <th>Criação</th>
                             <th>Tempo de uso da CPU</th>
                         </tr>
 
@@ -251,10 +230,10 @@ td {
                         { 
                             <tr>
                                 <td style="padding-left: 5px;">@processos.Nome</td>
-                                <td>@processos.UtilizacaoTotalCPU</td>
-                                <td>@processos.MemoriaFormatada</td>
-                                <td>@processos.Threads</td>
-                                <td>@processos.TempoInicialProcesso</td>
+                                <td style="text-align: right;">@processos.UtilizacaoTotalCPU %</td>
+                                <td style="text-align: right;">@processos.MemoriaFisica</td>
+                                <td style="text-align: right;">@processos.MemoriaPaginada</td>
+                                <td style="text-align: center;">@processos.Threads</td>
 					            <td style="text-align: center;">@processos.TempoTotalProcessador</td>
                             </tr>
                         }
@@ -280,7 +259,7 @@ td {
                                 <td>@processos.Id</td>
                                 <td>@processos.Status</td>
                                 <td>@processos.Usuario</td>
-                                <td style="text-align: right;">@processos.MemoriaFormatada</td>
+                                <td style="text-align: right;">@processos.MemoriaFisica</td>
                                 <td style="margin-right: 0;">@processos.Descricao</td>
                             </tr>
                         }

@@ -3,28 +3,26 @@ using System.Dynamic;
 using System.Diagnostics;
 using System.Management;
 using Task.Models;
-using System.Collections.Generic;
 
 namespace Task.Controllers
 {
     public class TaskManagerController : Controller
     {
-        Dictionary<int, Processo> dictProcessos = new Dictionary<int, Processo>();
-
         public IActionResult Index()
         {
-            GetProcessoEstatico(dictProcessos);
-            GetProcesso(dictProcessos);
+            List<Processo> listaProcessos = GetProcesso();
 
-            ViewBag.Processos           = dictProcessos;
-            ViewBag.QuantidadeProcessos = dictProcessos.Count();
+            ViewBag.Processos           = listaProcessos;
+            ViewBag.QuantidadeProcessos = listaProcessos.Count();
 
             return View();
         }
 
-        public void GetProcessoEstatico(Dictionary<int, Processo> dictProcessos)
-        {            
+        public List<Processo> GetProcesso()
+        {
             Process[] processList = Process.GetProcesses();
+
+            List<Processo> processos = new List<Processo>();
 
             foreach (Process process in processList)
             {
@@ -33,67 +31,41 @@ namespace Task.Controllers
                 var thread1 = new Thread(() =>
                 {
                     dynamic extraProcessInfo = GetProcessExtraInformation(process.Id);
-                    processo.Usuario = extraProcessInfo.Username;
+                    processo.Usuario   = extraProcessInfo.Username;
                     processo.Descricao = extraProcessInfo.Description;
                 });
                 thread1.Start();
 
                 try
-                {                 
-                    string[] processoDetalhes = new string[] 
+                {
+                    string[] processoDetalhes = new string[]
                     {
-                        process.StartTime.ToShortTimeString(), 
-                        process.Threads.Count.ToString(), 
+                        process.StartTime.ToShortTimeString(),
+                        process.Threads.Count.ToString(),
                         process.TotalProcessorTime.Duration().Milliseconds.ToString(),
+                        process.TotalProcessorTime.Duration().Hours.ToString() + ":" + process.TotalProcessorTime.Duration().Minutes.ToString() + ":" + process.TotalProcessorTime.Duration().Seconds.ToString()
                     };
-        
-                    processo.TempoInicialProcesso = processoDetalhes[0];
-                    processo.Threads              = processoDetalhes[1];
-        
+                
+                    processo.TempoInicialProcesso  = processoDetalhes[0];
+                    processo.Threads               = processoDetalhes[1];
+                    processo.TempoTotalProcessador = processoDetalhes[3];
+                
                     if (process.Id != 0)
                         processo.UtilizacaoTotalCPU = UpdateCpuUsagePercent(Convert.ToDouble(processoDetalhes[2]), process.ProcessName);
                 }
                 catch { }
 
-                processo.Id   = process.Id;
-                processo.Nome = process.ProcessName;
+                processo.Id               = process.Id;
+                processo.Nome             = process.ProcessName;
+                processo.Status           = process.Responding == true ? "Em execução" : "Suspenso";
+                processo.MemoriaFormatada = GetMemoriaFormatada(process.PrivateMemorySize64);
 
                 thread1.Join();
 
-                dictProcessos[process.Id] = processo;
+                processos.Add(processo);
             }
-        }
 
-        public void GetProcesso(Dictionary<int, Processo> dictProcessos)
-        {
-            Process[] processList = Process.GetProcesses();
-
-            foreach (Process process in processList)
-            {
-                var filter = dictProcessos.FirstOrDefault(p => p.Key == process.Id);
-
-                if (filter.Value == null)
-                {
-                    dictProcessos.Remove(process.Id);
-                    continue;
-                }
-
-                Processo processo = filter.Value;
-
-                try
-                {
-                    string[] processoDetalhes = new string[]
-                    {
-                        process.TotalProcessorTime.Duration().Hours.ToString() + ":" + process.TotalProcessorTime.Duration().Minutes.ToString() + ":" + process.TotalProcessorTime.Duration().Seconds.ToString()
-                    };
-
-                    processo.TempoTotalProcessador = processoDetalhes[0];
-                }
-                catch { }
-
-                processo.Status           = process.Responding == true ? "Em execução" : "Suspenso";
-                processo.MemoriaFormatada = GetMemoriaFormatada(process.PrivateMemorySize64);
-            }
+            return processos;
         }
 
         public string GetMemoriaFormatada(Int64 bytes)

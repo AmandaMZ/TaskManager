@@ -202,6 +202,7 @@ td {
                     <p style="color: white; font-weight: 400;">Gerenciador de Tarefas</p>
                 </div>
                 <div class="window-buttons">
+                    <p class="button" id="reload-window" style="font-size: 16px; color: white;" onclick="reload()"> ↺ </p>
                     <p class="button" id="minimize-window" style="font-size: 16px; color: white;">&#8212</p>
                     <p class="button" id="restore-window" style="font-size: 16px; color: white;">&#x25A2</p>
                     <p class="button" id="close-window" style="border-top-right-radius: 9px; color: white;" onclick="closeWindow()">
@@ -223,7 +224,7 @@ td {
                         <tr id="percent-usage">
                             <td></td>
                             <td>15%</td>
-                            <td>10%</td>
+                            <td>@ViewBag.TotalMemoria%</td>
                             <td>0%</td>
                             <td>8%</td>
                             <td></td>
@@ -249,12 +250,12 @@ td {
 				        @foreach (var processos in ViewBag.Processos)
                         { 
                             <tr>
-                                <td style="padding-left: 5px;">@processos.Value.Nome</td>
-                                <td>@processos.Value.UtilizacaoTotalCPU</td>
-                                <td>@processos.Value.MemoriaFormatada</td>
-                                <td>@processos.Value.Threads</td>
-                                <td>@processos.Value.TempoInicialProcesso</td>
-					            <td style="text-align: center;">@processos.Value.TempoTotalProcessador</td>
+                                <td style="padding-left: 5px;">@processos.Nome</td>
+                                <td>@processos.UtilizacaoTotalCPU</td>
+                                <td>@processos.MemoriaFormatada</td>
+                                <td>@processos.Threads</td>
+                                <td>@processos.TempoInicialProcesso</td>
+					            <td style="text-align: center;">@processos.TempoTotalProcessador</td>
                             </tr>
                         }
                     </table>
@@ -275,12 +276,12 @@ td {
 				        @foreach (var processos in ViewBag.Processos)
                         {                    
                             <tr>
-                                <td>@processos.Value.Nome</td>
-                                <td>@processos.Value.Id</td>
-                                <td>@processos.Value.Status</td>
-                                <td>@processos.Value.Usuario</td>
-                                <td style="text-align: right;">@processos.Value.MemoriaFormatada</td>
-                                <td style="margin-right: 0;">@processos.Value.Descricao</td>
+                                <td>@processos.Nome</td>
+                                <td>@processos.Id</td>
+                                <td>@processos.Status</td>
+                                <td>@processos.Usuario</td>
+                                <td style="text-align: right;">@processos.MemoriaFormatada</td>
+                                <td style="margin-right: 0;">@processos.Descricao</td>
                             </tr>
                         }
                     </table>
@@ -289,7 +290,6 @@ td {
         </div>
     </div>
 </body>
-
 <script>
 function openProcesses() {
     document.getElementById("processes").style.display = "block";
@@ -309,9 +309,9 @@ function closeWindow() {
     window.close();
 }
 
-$(document).ready(function () {
-    setInterval(atualizarProcessos, 1000);
-});
+function reload() {
+    window.location.reload();
+}
 
 </script>
 

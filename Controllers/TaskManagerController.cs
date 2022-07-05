@@ -53,7 +53,7 @@ namespace Task.Controllers
                 processo.MemoriaPaginada = GetMemoriaFormatada(process.PagedMemorySize64);
                 processo.Prioridade      = process.BasePriority;
 
-                //thread1.Join();
+                thread1.Join();
 
                 listaProcessos.Add(processo);
             }

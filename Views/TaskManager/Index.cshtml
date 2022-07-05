@@ -151,6 +151,42 @@ td {
     padding-right: 15px;
 }
 
+.opacity-background {
+    position: fixed;
+    display: none;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    background-color: #24242496;
+}
+
+.window-more-details {
+    z-index: 2;
+    width: 350px;
+    height: 450px;
+    background-color: white;
+    border-radius: 10px;
+    border: 1px solid rgb(85, 85, 85);
+    box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, 
+                rgba(0, 0, 0, 0.12) 0px -12px 30px, 
+                rgba(0, 0, 0, 0.12) 0px 4px 6px, 
+                rgba(0, 0, 0, 0.17) 0px 12px 13px, 
+                rgba(0, 0, 0, 0.09) 0px -3px 5px;
+}
+
+.process-more-details {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.information-details {
+    margin: 20px;
+}
+
 /* ----- Hovers ----- */
 
 #close-window:hover {
@@ -178,7 +214,7 @@ td {
     </style>
 </head>
 
-<body onload="openProcesses()">
+<body onload="{openProcesses(), accessNow()}">
     <div class="background">
         <img id="image-background" src="https://i.pinimg.com/originals/87/9d/e4/879de4cf2f25847047e2ef7f5c957439.jpg"></img>
 
@@ -228,8 +264,8 @@ td {
                             <td></td>
                         </tr>
 				        @foreach (var processos in ViewBag.Processos)
-                        { 
-                            <tr>
+                        {
+                            <tr ondblclick="openMoreDetails(this)" onclick="selectedProcess(this)" class="classeProcessos" id="background-processes">
                                 <td style="padding-left: 5px;">@processos.Nome</td>
                                 <td style="text-align: left;">@processos.Id</td>
                                 <td style="text-align: right;">@processos.UtilizacaoTotalCPU %</td>
@@ -237,6 +273,8 @@ td {
                                 <td style="text-align: right;">@processos.MemoriaPaginada</td>
                                 <td style="text-align: center;">@processos.Threads</td>
 					            <td style="text-align: center;">@processos.TempoTotalProcessador</td>
+                                <td style="display:none">@processos.Prioridade</td>
+                                <td style="display:none">@processos.Status</td>
                             </tr>
                         }
                     </table>
@@ -269,6 +307,30 @@ td {
                 </nobr>
             </div>
         </div>
+        <div class="opacity-background" id="process-details">
+            <div class="window-more-details">
+                <div class="top-window" style="display: flex; justify-content:flex-end">
+                    <p class="button" id="close-window" style="border-top-right-radius: 9px; color: white;"
+                        onclick="closeWindowDetails()">
+                        &#x2715</p>
+                </div>
+                <div class="process-more-details">
+                    <img src="https://e1.pngegg.com/pngimages/559/779/png-clipart-windows-live-for-xp-task-manager-icon-thumbnail.png"
+                        style="height: 90px; width: auto;">
+                    <p id="nome-processo" style="color: rgb(73, 125, 194);">Nome do processo</p>
+                </div>
+                <div class="information-details">
+                    <hr>
+                    <p id="pid" style="margin-top: 20px;">PID: 1271982</p>
+                    <p id="status" style="margin-top: 20px;">Status: Em execução</p>
+                    <p id="tamanho" style="margin-top: 20px;">Tamanho: 23 MB</p>
+                    <p id="prioridade" style="margin-top: 20px;">Tempo Inicial: 00:00:00</p>
+                    <br><br><br><br>
+                    <hr>
+                </div>
+                <p id="access" style="margin: 20px 0 0 20px; color: rgb(73, 125, 194)"></p>
+            </div>
+        </div>
     </div>
 </body>
 <script>
@@ -292,6 +354,31 @@ function closeWindow() {
 
 function reload() {
     window.location.reload();
+}
+
+function accessNow() {
+    let date = new Date();
+    document.getElementById("access").innerHTML = "Acesso em: " + date.toLocaleDateString('pt-BR');
+}
+
+function selectedProcess(row) {
+    for (let i = 0; i < document.getElementsByClassName('classeProcessos').length; i++) {
+        document.getElementsByClassName('classeProcessos')[i].style.backgroundColor = "white";
+    }
+    row.style.backgroundColor = "rgba(73, 125, 194, 0.2)";
+}
+
+function closeWindowDetails() {
+    document.getElementById("process-details").style.display = "none";
+}
+
+function openMoreDetails(row) {
+    document.getElementById("nome-processo").innerHTML = document.getElementsByClassName('classeProcessos')[row.rowIndex - 2].querySelectorAll('td')[0].textContent;
+    document.getElementById("pid").innerHTML = "PID: " + document.getElementsByClassName('classeProcessos')[row.rowIndex - 2].querySelectorAll('td')[1].textContent;
+    document.getElementById("status").innerHTML = "Status: " + document.getElementsByClassName('classeProcessos')[row.rowIndex - 2].querySelectorAll('td')[8].textContent;
+    document.getElementById("tamanho").innerHTML = "Tamanho: " + document.getElementsByClassName('classeProcessos')[row.rowIndex - 2].querySelectorAll('td')[3].textContent;
+    document.getElementById("prioridade").innerHTML = "Prioridade: " + document.getElementsByClassName('classeProcessos')[row.rowIndex - 2].querySelectorAll('td')[7].textContent;
+    document.getElementById("process-details").style.display = "flex";
 }
 
 </script>

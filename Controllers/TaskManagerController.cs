@@ -38,20 +38,11 @@ namespace Task.Controllers
                 
                 try
                 {
-                    string[] processoDetalhes = new string[]
-                    {
-                        process.StartTime.ToShortTimeString(),
-                        process.Threads.Count.ToString(),
-                        process.TotalProcessorTime.Duration().Milliseconds.ToString(),
-                        process.TotalProcessorTime.Duration().Hours.ToString() + ":" + process.TotalProcessorTime.Duration().Minutes.ToString() + ":" + process.TotalProcessorTime.Duration().Seconds.ToString(),
-                    };
-                
-                    processo.TempoInicialProcesso  = processoDetalhes[0];
-                    processo.Threads               = processoDetalhes[1];
-                    processo.TempoTotalProcessador = processoDetalhes[3];
+                    processo.Threads               = process.Threads.Count.ToString();
+                    processo.TempoTotalProcessador = process.TotalProcessorTime.Duration().Hours.ToString() + ":" + process.TotalProcessorTime.Duration().Minutes.ToString() + ":" + process.TotalProcessorTime.Duration().Seconds.ToString();
                 
                     if (process.Id != 0)
-                        processo.UtilizacaoTotalCPU = UpdateCpuUsagePercent(Convert.ToDouble(processoDetalhes[2]), process.ProcessName);
+                        processo.UtilizacaoTotalCPU = UpdateCpuUsagePercent(Convert.ToDouble(process.TotalProcessorTime.Duration().Milliseconds.ToString()), process.ProcessName);
                 }
                 catch { }
 
@@ -60,6 +51,7 @@ namespace Task.Controllers
                 processo.Status          = process.Responding == true ? "Em execução" : "Suspenso";
                 processo.MemoriaFisica   = GetMemoriaFormatada(process.WorkingSet64);
                 processo.MemoriaPaginada = GetMemoriaFormatada(process.PagedMemorySize64);
+                processo.Prioridade      = process.BasePriority;
 
                 //thread1.Join();
 

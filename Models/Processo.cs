@@ -14,8 +14,8 @@ namespace Task.Models
         public string Usuario { get; set; }
         public string Descricao { get; set; }
         public string TempoTotalProcessador { get; set; }
-        public string TempoInicialProcesso { get; set; }
         public double UtilizacaoTotalCPU { get; set; }
         public string Threads { get; set; }
+        public int Prioridade { get; set; }
     }
 }

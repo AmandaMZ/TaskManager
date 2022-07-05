@@ -4,6 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <StartupObject></StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,9 +24,9 @@
 
   <ItemGroup>
     <PackageReference Include="IKVM" Version="8.1.5717" />
+    <PackageReference Include="jQuery" Version="3.6.0" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="6.0.1" />
     <PackageReference Include="System.Management" Version="6.0.0" />
-    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
   </ItemGroup>
 
 </Project>

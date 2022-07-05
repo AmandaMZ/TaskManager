@@ -9,11 +9,13 @@ namespace Task.Models
         public int Id { get; set; }
         public string Nome { get; set; }
         public string Status { get; set; }
-        public string MemoriaFormatada { get; set; }
+        public string MemoriaFisica { get; set; }
+        public string MemoriaPaginada { get; set; }
         public string Usuario { get; set; }
         public string Descricao { get; set; }
-        public List<Process> SubProcessos { get; set; }
-        public int CPU { get; set; }
         public string TempoTotalProcessador { get; set; }
+        public double UtilizacaoTotalCPU { get; set; }
+        public string Threads { get; set; }
+        public int Prioridade { get; set; }
     }
 }
